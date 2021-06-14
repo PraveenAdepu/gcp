@@ -1,0 +1,33 @@
+project: dataflow
+name: dataflow_pipeline_batch_inference
+tags:
+- version_0.01
+exclude:
+- output
+- .csv
+- .git
+- .github
+parameters:
+  all_services_account_key: /keys/allservices/statscope-1c023b909ea7.json
+  project: statscope
+  region: australia-southeast1  
+  bucket: dataflow-pipeline-batch-inference
+  model_artifacts_folder: model_artifacts
+  predictions_folder: predictions
+  source_folder: source
+  staging_folder: staging
+  temp_folder: temp
+  blob_source: testingSet.csv
+  blob_source_data_file: /data/testingSet.csv
+  blob_model_artifact: model_rf.pickle
+  blob_model_data_file: /models/model_rf.pickle
+  dataset: dataflow_pipeline_batch_inference
+  testingSet_table: testingSet
+  Dataflow_job_name: prav_dataflow_pipeline_batch_inference
+  service_account_email: allservices@statscope.iam.gserviceaccount.com
+  dataflow_runner: DirectRunner # 'DataflowRunner'
+  save_main_session: 1
+  setup_file: ./setup.py
+  num_workers: 4
+  autoscaling_algorithm: AUTOSCALING_ALGORITHM
+
