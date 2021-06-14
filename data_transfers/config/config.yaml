@@ -1,0 +1,17 @@
+project: gcp learning
+name: gco learning
+tags:
+- version_0.01
+exclude:
+- output
+- .csv
+- .git
+- .github
+parameters:
+  storage_service_account_key: /keys/key_storage/statscope-4fc1b774c9d0.json  
+  bucket_source: ["prav_timeseries_sample_dataset"]
+  blob_source: test.csv
+  data_source: /data/test.csv
+  blob_features: test_features.csv
+  bucket_features: ["prav_timeseries_features"]  
+  data_features: test_features.csv
