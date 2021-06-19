@@ -1,0 +1,9 @@
+# To ensure app dependencies are ported from your virtual environment/host machine into your container, run 'pip freeze > requirements.txt' in the terminal to overwrite this file
+pandas
+numpy
+pyyaml
+scikit-learn==0.21.3
+joblib==0.13.2
+google-cloud-storage
+google-cloud-bigquery            
+apache-beam[gcp]
