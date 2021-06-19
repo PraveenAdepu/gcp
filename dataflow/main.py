@@ -2,11 +2,11 @@ import yaml as yaml
 import pandas as pd
 import numpy as np
 import logging
-import pickle
+# import pickle
+from joblib import load
 import os
 from os.path import dirname, abspath
 from sklearn.ensemble import RandomForestClassifier
-
 import apache_beam as beam
 from google.cloud import storage
 from apache_beam.options.pipeline_options import (
@@ -18,14 +18,52 @@ from apache_beam.options.pipeline_options import (
 )
 
 # feature engineering logic
-from src.feature_engineering import (
-    dummy_dict,
-    internet_dict,
-    inference_yesno_cols,
-    internet_cols,
-    data_transformations,
-)
+dummy_dict = {"Yes": 1, "No": 0}
+internet_dict = {"No": 0, "No internet service": 1, "Yes": 2}
+train_yesno_cols = [
+    "Partner",
+    "Dependents",
+    "PhoneService",
+    "PaperlessBilling",
+    "Churn",
+]
+inference_yesno_cols = ["Partner", "Dependents", "PhoneService", "PaperlessBilling"]
+internet_cols = [
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+]
 
+# preprocessing categorical features
+def data_transformations(data, dummy_dict, internet_dict, yesno_cols, internet_cols):
+
+    data[yesno_cols] = data[yesno_cols].apply(lambda x: x.map(dummy_dict))
+    data[internet_cols] = data[internet_cols].apply(lambda x: x.map(internet_dict))
+
+    # manual map
+    data["gender"] = data["gender"].map({"Female": 0, "Male": 1})
+    data["MultipleLines"] = data["MultipleLines"].map(
+        {"No": 0, "No phone service": 1, "Yes": 2}
+    )
+    data["InternetService"] = data["InternetService"].map(
+        {"DSL": 0, "Fiber optic": 1, "No": 2}
+    )
+    data["Contract"] = data["Contract"].map(
+        {"Month-to-month": 0, "One year": 1, "Two year": 2}
+    )
+    data["PaymentMethod"] = data["PaymentMethod"].map(
+        {
+            "Bank transfer (automatic)": 0,
+            "Credit card (automatic)": 1,
+            "Electronic check": 2,
+            "Mailed check": 3,
+        }
+    )
+    return data
+"""
 # set project directory
 project_directory = dirname(abspath("__file__"))
 
@@ -34,9 +72,28 @@ config = yaml.safe_load(open(project_directory + "/config/config.yaml"))
 
 print("Processing : Set Configuration parameters")
 allservices_key = project_directory + config["parameters"]["all_services_account_key"]
+"""
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = allservices_key
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = 'C:\\Users\\61433\\Documents\\statscope\\GitHub\\gcp\\dataflow/keys/allservices/statscope-1c023b909ea7.json'
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = allservices_key
+PROJECT = 'statscope'
+JOB_NAME = 'batch-inference'
+REGION = 'australia-southeast1'
+BUCKET = 'dataflow-pipeline-batch-inference'
+STAGING_LOCATION = 'gs://dataflow-pipeline-batch-inference/staging'
+TEMP_LOCATION = 'gs://dataflow-pipeline-batch-inference/temp'
+SERVICE_ACCOUNT_EMAIL = 'allservices@statscope.iam.gserviceaccount.com'
+RUNNER = 'DataflowRunner'
+SAVE_MAIN_SESSION = True
+SETUP_FILE = './setup.py'
+NUM_WORKERS = 4
+AUTOSCALING_ALGORITHM = 'AUTOSCALING_ALGORITHM'
+MODEL_PATH = 'model_artifacts/model_rf.joblib'
+MODEL_ARTIFACT = 'model_rf.joblib'
+PREDICTIONS_FILE = 'gs://dataflow-pipeline-batch-inference/predictions/'
+WORKER_HARNESS_CONTAINER_IMAGE = 'asia.gcr.io/statscope/dataflow:latest'
 
+"""
 PROJECT = config["parameters"]["project"]
 JOB_NAME = config["parameters"]["Dataflow_job_name"]
 REGION = config["parameters"]["region"]
@@ -69,6 +126,7 @@ PREDICTIONS_FILE = (
     + config["parameters"]["predictions_folder"]
     + "/"
 )
+"""
 
 source_columns = [
     "customerID",
@@ -140,9 +198,9 @@ class PredictSklearn(beam.DoFn):
         self.blob = self.bucket.blob(self._model_path)
         self.blob.download_to_filename(self._destination_name)
         # unpickle sklearn model
-        # self._model = load(self._destination_name)
-        with open(self._destination_name, "rb") as handle:
-            self._model = pickle.load(handle)
+        self._model = load(self._destination_name)
+        # with open(self._destination_name, "rb") as handle:
+        #    self._model = pickle.load(handle)
 
     def process(self, element):
         from sklearn.ensemble import RandomForestClassifier
@@ -171,10 +229,12 @@ def run(argv=None):
     google_cloud_options.staging_location = STAGING_LOCATION
     google_cloud_options.temp_location = TEMP_LOCATION
     google_cloud_options.service_account_email = SERVICE_ACCOUNT_EMAIL
+    # pipeline_options.view_as(SetupOptions).experiment="beam_fn_api"
     pipeline_options.view_as(StandardOptions).runner = RUNNER
     pipeline_options.view_as(SetupOptions).save_main_session = SAVE_MAIN_SESSION
     pipeline_options.view_as(SetupOptions).setup_file = SETUP_FILE
     pipeline_options.view_as(WorkerOptions).num_workers = NUM_WORKERS
+    pipeline_options.view_as(WorkerOptions).worker_harness_container_image = WORKER_HARNESS_CONTAINER_IMAGE
     pipeline_options.view_as(
         WorkerOptions
     ).autoscaling_algorithm = AUTOSCALING_ALGORITHM

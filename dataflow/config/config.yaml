@@ -23,9 +23,9 @@ parameters:
   blob_model_data_file: /models/model_rf.pickle
   dataset: dataflow_pipeline_batch_inference
   testingSet_table: testingSet
-  Dataflow_job_name: prav_dataflow_pipeline_batch_inference
+  Dataflow_job_name: "batch-inference"
   service_account_email: allservices@statscope.iam.gserviceaccount.com
-  dataflow_runner: DirectRunner # 'DataflowRunner'
+  dataflow_runner: DataflowRunner # DirectRunner # 
   save_main_session: 1
   setup_file: ./setup.py
   num_workers: 4

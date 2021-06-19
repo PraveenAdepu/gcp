@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+import io
 
 pd.set_option("display.max_rows", None)
 pd.set_option("display.max_columns", None)
@@ -11,6 +12,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 import pickle
+from google.cloud import storage
 
 """
 from src.feature_engineering import (
@@ -68,7 +70,30 @@ def data_transformations(data, dummy_dict, internet_dict, yesno_cols, internet_c
     )
     return data
 
-data = pd.read_csv("gs://prav_timeseries_features/data/trainingSet.csv")
+# data = pd.read_csv("gs://prav_timeseries_features/data/trainingSet.csv")
+
+# storage_client = storage.Client.from_service_account_json("statscope-1c023b909ea7.json")
+storage_client = storage.Client()
+bucket_name = "prav_timeseries_features"
+blob_name = "data/trainingSet.csv"
+source_file_name = "data/trainingSet.csv"
+
+def gcp_csv_to_df(storage_client, bucket_name, blob_name, source_file_name):
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    data = blob.download_as_string()
+    df = pd.read_csv(io.BytesIO(data))
+    print(f"Pulled down file from bucket {bucket_name}, file name: {source_file_name}")
+    return df
+
+def df_to_gcp_csv(storage_client, df, bucket, blob_name, source_file_name):
+    bucket = storage_client.bucket(bucket)
+    blob = bucket.blob(blob_name)
+    blob.upload_from_string(df.to_csv(), "text/csv")
+    print(f"DataFrame uploaded to bucket {bucket}, file name: {source_file_name}")
+    
+data = gcp_csv_to_df(storage_client, bucket_name, blob_name, source_file_name=blob_name)
+
 data.head()
 data.shape
 data["TotalCharges"] = pd.to_numeric(data["TotalCharges"], errors="coerce")
@@ -105,10 +130,18 @@ model_rf.fit(X_train, y_train)
 # Make predictions
 prediction_test = model_rf.predict(X_test)
 
-# cross validation scoring
-print(roc_auc_score(y_test, prediction_test))
+X_test["predictions"] = prediction_test
+
+bucket_name = "prav_timeseries_features"
+blob_name = "data/predictionSet.csv"
+source_file_name = "data/predictionSet.csv"
+
+df_to_gcp_csv(storage_client, X_test, bucket_name, blob_name, source_file_name)
+
+
+        
 """
-# store model object for inference
-with open("./models/model_rf.pickle", "wb") as handle:
-    pickle.dump(model_rf, handle, protocol=pickle.HIGHEST_PROTOCOL)
+python setup.py sdist
+
+gsutil cp dist/trainer-0.1.tar.gz "gs://prav_timeseries_features/data/trainer-0.1.tar.gz"
 """
