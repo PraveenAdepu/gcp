@@ -68,6 +68,7 @@ def data_transformations(data, dummy_dict, internet_dict, yesno_cols, internet_c
     )
     return data
 
+
 data = pd.read_csv("gs://prav_timeseries_features/data/trainingSet.csv")
 data.head()
 data.shape

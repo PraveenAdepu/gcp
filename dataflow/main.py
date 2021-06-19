@@ -2,6 +2,7 @@ import yaml as yaml
 import pandas as pd
 import numpy as np
 import logging
+
 # import pickle
 from joblib import load
 import os
@@ -63,6 +64,8 @@ def data_transformations(data, dummy_dict, internet_dict, yesno_cols, internet_c
         }
     )
     return data
+
+
 """
 # set project directory
 project_directory = dirname(abspath("__file__"))
@@ -74,24 +77,26 @@ print("Processing : Set Configuration parameters")
 allservices_key = project_directory + config["parameters"]["all_services_account_key"]
 """
 # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = allservices_key
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = 'C:\\Users\\61433\\Documents\\statscope\\GitHub\\gcp\\dataflow/keys/allservices/statscope-1c023b909ea7.json'
+os.environ[
+    "GOOGLE_APPLICATION_CREDENTIALS"
+] = "C:\\Users\\61433\\Documents\\statscope\\GitHub\\gcp\\dataflow/keys/allservices/statscope-1c023b909ea7.json"
 
-PROJECT = 'statscope'
-JOB_NAME = 'batch-inference'
-REGION = 'australia-southeast1'
-BUCKET = 'dataflow-pipeline-batch-inference'
-STAGING_LOCATION = 'gs://dataflow-pipeline-batch-inference/staging'
-TEMP_LOCATION = 'gs://dataflow-pipeline-batch-inference/temp'
-SERVICE_ACCOUNT_EMAIL = 'allservices@statscope.iam.gserviceaccount.com'
-RUNNER = 'DataflowRunner'
+PROJECT = "statscope"
+JOB_NAME = "batch-inference"
+REGION = "australia-southeast1"
+BUCKET = "dataflow-pipeline-batch-inference"
+STAGING_LOCATION = "gs://dataflow-pipeline-batch-inference/staging"
+TEMP_LOCATION = "gs://dataflow-pipeline-batch-inference/temp"
+SERVICE_ACCOUNT_EMAIL = "allservices@statscope.iam.gserviceaccount.com"
+RUNNER = "DataflowRunner"
 SAVE_MAIN_SESSION = True
-SETUP_FILE = './setup.py'
+SETUP_FILE = "./setup.py"
 NUM_WORKERS = 4
-AUTOSCALING_ALGORITHM = 'AUTOSCALING_ALGORITHM'
-MODEL_PATH = 'model_artifacts/model_rf.joblib'
-MODEL_ARTIFACT = 'model_rf.joblib'
-PREDICTIONS_FILE = 'gs://dataflow-pipeline-batch-inference/predictions/'
-WORKER_HARNESS_CONTAINER_IMAGE = 'asia.gcr.io/statscope/dataflow:latest'
+AUTOSCALING_ALGORITHM = "AUTOSCALING_ALGORITHM"
+MODEL_PATH = "model_artifacts/model_rf.joblib"
+MODEL_ARTIFACT = "model_rf.joblib"
+PREDICTIONS_FILE = "gs://dataflow-pipeline-batch-inference/predictions/"
+WORKER_HARNESS_CONTAINER_IMAGE = "asia.gcr.io/statscope/dataflow:latest"
 
 """
 PROJECT = config["parameters"]["project"]
@@ -234,7 +239,9 @@ def run(argv=None):
     pipeline_options.view_as(SetupOptions).save_main_session = SAVE_MAIN_SESSION
     pipeline_options.view_as(SetupOptions).setup_file = SETUP_FILE
     pipeline_options.view_as(WorkerOptions).num_workers = NUM_WORKERS
-    pipeline_options.view_as(WorkerOptions).worker_harness_container_image = WORKER_HARNESS_CONTAINER_IMAGE
+    pipeline_options.view_as(
+        WorkerOptions
+    ).worker_harness_container_image = WORKER_HARNESS_CONTAINER_IMAGE
     pipeline_options.view_as(
         WorkerOptions
     ).autoscaling_algorithm = AUTOSCALING_ALGORITHM
